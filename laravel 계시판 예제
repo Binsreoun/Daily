@@ -1,0 +1,586 @@
+php laravel 계시판 만들기
+
+에디터 : phstrom
+데이터베이스 : mysql
+
+터미널 연결 후
+1.데이터베이스 생성 
+php artisan make:migration xboard
+
+database/migrations/2021_03_10_xxxxx_xboards.php
+
+<?php
+
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
+
+class Xboards extends Migration
+{
+
+    public function up()
+    {
+        Schema::create('xboards', function (Blueprint $table) {
+            $table->increments('id');
+            $table->string('title');
+            $table->string('description');
+            $table->timestamps();
+        });
+    }
+
+}
+
+그후 php artisan migrate
+=>데이터 베이스 생성
+워크벤치에서 1개의 열 생성
+
+insert into xboards(title,description)
+values('타이틀','내용');
+
+
+2.모델생성 //데이터베이스에서 어떤값을 이용할것인가!
+php artisan make:model xboardsmodel
+
+app/xboardsmodel.php
+
+<?php
+
+namespace App;
+
+use Illuminate\Database\Eloquent\Model;
+
+class xboardsmodel extends Model
+{
+    protected $table = 'xboards';
+    protected $fillable = ['title','description'];
+}
+
+
+3.컨트롤러생성
+php artisan make:controller xboardController
+
+app/http/controllers/xboardController.php
+
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\xboardsmodel; //적어줘야함;;
+
+class xboardController extends Controller
+{
+
+}
+
+4. 목록생성
+
+(1)라우트 생성
+routes/web.php
+
+Route::get('board','xboardController@board');
+
+(2)컨트롤러생성
+app/http/controllers/xboardController.php
+
+public function board(){
+
+        $xboards= \App\xboardsmodel::all(); //모델을 가져옴
+
+      return view('board',compact('xboards')); //compact 사용시 $xboard를 view에서 사용가능
+    }
+
+(3)뷰생성
+resources/views/board.blade.php
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Project.html</title>
+</head>
+<body>
+<h1>게시판</h1>
+<table >
+    <tr>
+        <th>No.</th>
+        <th>제목</th>
+        <th>작성일</th>
+    </tr>
+        @foreach($xboards as $xboard) //(배열중 1열을 가져오는것)
+        <tr>
+        <th>
+            {{$xboard['id']}}
+        </th>
+            <th>
+                    {{$xboard['title']}}
+            </th>
+            <th>
+                {{$xboard['updated_at']}}
+            </th>
+        </tr>
+        @endforeach
+</table>
+<br>
+<a href="create"><button type="submit">생성</button></a>
+</body>
+</html>
+
+5.글생성
+(1)라우터
+routes/web.php
+
+Route::get('create','xboardController@create');
+Route::post('create1','xboardController@create1');
+
+(2)뷰
+resources/views/boardcreate.blade.php
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>12314</title>
+</head>
+<body>
+<h1>글 작성</h1>
+<form method="POST" action="create1">
+    <input type="hidden" name="_token" value="{{ csrf_token() }}" >
+    <div>
+        <input type="text" name="title" placeholder="제목">
+    </div>
+
+    <div>
+        <textarea name="description" placeholder="내용"></textarea>
+    </div>
+
+    <div>
+        <button type="submit">글 생성</button>
+    </div>
+</form>
+</body>
+</html>
+
+(3)컨트롤러
+app/http/controllers/xboardController.php
+
+    public function create(){
+
+        return view('boardcreate');
+    }
+
+    public function create1(Request $request){  //Request로 값을 받아와서 배열을 만들어준다
+        $ary = array(
+            'title'=>$request['title'],
+            'description'=>$request['description']
+        );
+        xboardsmodel::create($ary);
+        return redirect('board');
+    }
+
+6.조회
+(1) 라우터
+routes/web.php
+
+Route::get('board/{id}','xboardController@show');
+
+(2) 뷰 수정
+resources/views/board.blade.php
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Project.html</title>
+</head>
+<body>
+<h1>게시판</h1>
+<table >
+    <tr>
+        <th>No.</th>
+        <th>제목</th>
+        <th>작성일</th>
+    </tr>
+        @foreach($xboards as $xboard)
+        <tr>
+        <th>
+            {{$xboard['id']}}
+        </th>
+            <th>
+                <a href="board/{{$xboard['id']}}">
+                    {{$xboard['title']}}
+                </a>
+            </th>
+            <th>
+                {{$xboard['updated_at']}}
+            </th>
+        </tr>
+        @endforeach
+</table>
+<br>
+<a href="create"><button type="submit">생성</button></a>
+</body>
+</html>
+
+(3)뷰생성
+resources/views/boardshow.blade.php
+
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>000</title>
+</head>
+<body>
+<br><br>
+<input type="hidden" name="_token" value="{{ csrf_token() }}" >
+<div>
+    {{$xboard['title']}}
+</div>
+<br><br>
+<div>
+    {{$xboard['description'] }}
+</div>
+<br><br>
+<a href="{{$xboard['id']}}/edit"><button>수정</button></a>
+<a href="{{$xboard['id']}}/delete"><button>글 삭제</button></a>
+
+</body>
+</html>
+
+(4)컨트롤러 생성
+app/http/controllers/xboardController.php
+
+    public function show(Request $request,$id){ //받아오는 열이 1개이기 때문에 $xboard로 설정
+
+        $xboard= \App\xboardsmodel::where('id',$id)->first();
+        return view('boardshow',compact('xboard'));
+
+    }
+
+7 수정
+(1)라우트
+routes/web.php
+
+Route::get('board/{id}/edit','xboardController@edit');
+Route::post('board/{id}/update','xboardController@update');
+
+(2) 컨트롤러1
+app/http/controllers/xboardController.php
+
+     public function edit(Request $request,$id){ 
+
+        $xboard= \App\xboardsmodel::where('id',$id)->first();
+        return view('boardedit',compact('xboard'));
+
+    }
+
+(3)뷰생성
+resources/views/boardedit.php
+
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>00</title>
+</head>
+<body>
+<form method="POST" action="update">
+    {!! csrf_field() !!}
+    <div>
+        <input type="text" name="title" placeholder="제목" value="{{$xboard->title }}">
+    </div>
+    <br>
+    <div>
+        <textarea name="description" placeholder="내용" >{{$xboard->description}}</textarea>
+    </div>
+    <br>
+    <div>
+        <button type="submit">글 수정</button>
+    </div>
+</form>
+</body>
+</html>
+
+
+(2) 컨트롤러2
+app/http/controllers/xboardController.php
+
+    public function update(Request $request,$id)
+    {
+        $ary = array(
+            'title'=>$request['title'],
+            'description'=>$request['description']
+        );
+					//sql작성법 숙지하면 좋음
+        xboardsmodel::where('id',$id)->update(['title'=>$ary['title'] ,'description'=>$ary['description']]);
+
+        return redirect('board');
+    }
+
+8. 삭제
+(1)라우트
+routes/web.php
+
+Route::get('board/{id}/delete','xboardController@delete');
+
+(2)컨트롤러
+app/http/controllers/xboardController.php
+
+    public function delete(Request $request,$id)
+    {
+
+        xboardsmodel::where('id',$id)->delete();
+
+        return redirect('board');
+    }
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+최종파일
+1.데이터베이스 생성파일,모델파일
+
+database/migrations/2021_03_10_xxxxx_xboards.php
+
+<?php
+
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
+
+class Xboards extends Migration
+{
+
+    public function up()
+    {
+        Schema::create('xboards', function (Blueprint $table) {
+            $table->increments('id');
+            $table->string('title');
+            $table->string('description');
+            $table->timestamps();
+        });
+    }
+
+}
+
+app/xboardsmodel.php
+
+<?php
+
+namespace App;
+
+use Illuminate\Database\Eloquent\Model;
+
+class xboardsmodel extends Model
+{
+    protected $table = 'xboards';
+    protected $fillable = ['title','description'];
+}
+
+2.라우트
+routes/web.php
+
+//게시판 만들기 예제
+Route::get('board','xboardController@board');
+Route::get('create','xboardController@create');
+Route::post('create1','xboardController@create1');
+Route::get('board/{id}','xboardController@show');
+Route::get('board/{id}/edit','xboardController@edit');
+Route::post('board/{id}/update','xboardController@update');
+Route::get('board/{id}/delete','xboardController@delete');
+
+3.컨트롤러
+app/http/controllers/xboardController.php
+
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\xboardsmodel;
+
+class xboardController extends Controller
+{
+    public function board(){
+
+        $xboards= \App\xboardsmodel::all();
+
+      return view('board',compact('xboards'));
+    }
+
+    public function create(){
+
+        return view('boardcreate');
+    }
+
+    public function create1(Request $request){
+        $ary = array(
+            'title'=>$request['title'],
+            'description'=>$request['description']
+        );
+        xboardsmodel::create($ary);
+        return redirect('board');
+    }
+
+    public function show(Request $request,$id){
+
+        $xboard= \App\xboardsmodel::where('id',$id)->first();
+        return view('boardshow',compact('xboard'));
+
+    }
+    public function edit(Request $request,$id){
+
+        $xboard= \App\xboardsmodel::where('id',$id)->first();
+
+        return view('boardedit',compact('xboard'));
+
+    }
+
+    public function update(Request $request,$id)
+    {
+        $ary = array(
+            'title'=>$request['title'],
+            'description'=>$request['description']
+        );
+
+        xboardsmodel::where('id',$id)->update(['title'=>$ary['title'] ,'description'=>$ary['description']]);
+
+        return redirect('board');
+    }
+
+    public function delete(Request $request,$id)
+    {
+
+        xboardsmodel::where('id',$id)->delete();
+
+        return redirect('board');
+    }
+
+}
+
+4.뷰
+(1)목록
+resources/views/board.blade.php
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Project.html</title>
+</head>
+<body>
+<h1>게시판</h1>
+<table >
+    <tr>
+        <th>No.</th>
+        <th>제목</th>
+        <th>작성일</th>
+    </tr>
+        @foreach($xboards as $xboard)
+        <tr>
+        <th>
+            {{$xboard['id']}}
+        </th>
+            <th>
+                <a href="board/{{$xboard['id']}}">
+                    {{$xboard['title']}}
+                </a>
+            </th>
+            <th>
+                {{$xboard['updated_at']}}
+            </th>
+        </tr>
+        @endforeach
+</table>
+<br>
+<a href="create"><button type="submit">생성</button></a>
+</body>
+</html>
+
+(2)생성
+resources/views/boardcreate.blade.php
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>12314</title>
+</head>
+<body>
+<h1>글 작성</h1>
+<form method="POST" action="create1">
+    <input type="hidden" name="_token" value="{{ csrf_token() }}" >
+    <div>
+        <input type="text" name="title" placeholder="제목">
+    </div>
+
+    <div>
+        <textarea name="description" placeholder="내용"></textarea>
+    </div>
+
+    <div>
+        <button type="submit">글 생성</button>
+    </div>
+</form>
+</body>
+</html>
+
+(3)조회,삭제
+resources/views/boardshow.blade.php
+
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>000</title>
+</head>
+<body>
+<br><br>
+<input type="hidden" name="_token" value="{{ csrf_token() }}" >
+<div>
+    {{$xboard['title']}}
+</div>
+<br><br>
+<div>
+    {{$xboard['description'] }}
+</div>
+<br><br>
+<a href="{{$xboard['id']}}/edit"><button>수정</button></a>
+<a href="{{$xboard['id']}}/delete"><button>글 삭제</button></a>
+
+</body>
+</html>
+
+(4)수정
+resources/views/boardedit.php
+
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>00</title>
+</head>
+<body>
+<form method="POST" action="update">
+    {!! csrf_field() !!}
+    <div>
+        <input type="text" name="title" placeholder="제목" value="{{$xboard->title }}">
+    </div>
+    <br>
+    <div>
+        <textarea name="description" placeholder="내용" >{{$xboard->description}}</textarea>
+    </div>
+    <br>
+    <div>
+        <button type="submit">글 수정</button>
+    </div>
+</form>
+</body>
+</html>
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+
