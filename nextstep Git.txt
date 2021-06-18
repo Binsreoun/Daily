@@ -31,28 +31,28 @@ ex) git push origin step1
 
 1. 저장소를 자신의 컴퓨터로 clone
 git clone -b {본인_아이디} --single-branch https://github.com/{본인_아이디}/{저장소 아이디}
-ex) $ git clone -b binsreoun --single-branch https://github.com/Binsreoun/java-lotto.git
+ex) git clone -b binsreoun --single-branch https://github.com/Binsreoun/java-lotto.git
 
 2. 디렉토리로 이동
 cd {저장소 아이디}
-ex) $ cd java-lotto
+ex) cd java-lotto
 
 
 3. 브랜치 생성
 git checkout -b 브랜치이름
-ex)$ git checkout -b step1
+ex) git checkout -b step1
 
 4. remote할 저장소 담기
 git remote add{저장할 이름} https://github.com/{저장대상_아이디}/{저장소 아이디}
-ex)$ git remote add pair https://github.com/boggydoggy/java-lotto.git
+ex) git remote add pair https://github.com/boggydoggy/java-lotto.git
 
 5. 가져갈 브랜치 담기
 git pull {저장한 이름} {가져갈 브랜치}
-ex)$ git pull pair step1
+ex) git pull pair step1
 
 6. 내 브랜치로 가져온 브랜치 넣기
 git push origin {가져갈 브랜치}
-$ git push origin step1
+ex) git push origin step1
 
 ##브렌치 변경 및 삭제
 
